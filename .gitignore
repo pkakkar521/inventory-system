@@ -5,7 +5,7 @@ inventory-backend/node_modules/
 
 
 # React (Frontend)
-inventory-frontend/node_modules/
+inventory-system/node_modules/
 build/
 
 # Logs & System files
