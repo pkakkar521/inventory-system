@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 
 // Connect to Central User Database
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.CENTRAL_DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("Connected to Central Database"))
     .catch((err) => console.log("Central DB Connection Error:", err));
 
