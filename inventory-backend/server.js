@@ -3,9 +3,11 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const cors = require("cors");
 
 dotenv.config();
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // Connect to Central User Database

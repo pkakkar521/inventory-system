@@ -8,30 +8,37 @@ const Login = () => {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("admin");
-  const [error, setError] = useState(""); // Error state
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // Loading state
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); // Reset error message before new request
+    setError("");
+    setLoading(true); // Disable button
 
     try {
       const response = await axios.post("http://localhost:5000/login", {
-        userId, 
-        password, 
+        userId,
+        password,
         role,
       });
 
       if (!response.data.token || !response.data.dbUri) {
-        setError("Invalid credentials or missing data from server!");
-        return;
+        throw new Error("Invalid response from server");
       }
 
       login(response.data.token, response.data.dbUri);
       navigate("/inventory");
     } catch (error) {
-      setError("Login failed! Check your credentials.");
+      if (error.response) {
+        setError(error.response.data.message || "Invalid credentials!");
+      } else {
+        setError("Server error, please try again!");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,9 +73,10 @@ const Login = () => {
             <option value="user">User</option>
           </select>
 
-          <button type="submit" className="login-button">Login</button>
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
 
-          {/* Show error message if login fails */}
           {error && <p className="error-message">{error}</p>}
         </form>
       </div>

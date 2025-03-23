@@ -7,24 +7,28 @@ const Inventory = () => {
   const [stocks, setStocks] = useState([]);
   const [item, setItem] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [error, setError] = useState(""); // State for errors
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (token) fetchStocks();
-  }, [token]); // Re-run when token updates
+  }, [token]);
 
   const fetchStocks = async () => {
     if (!token) return;
+    setLoading(true);
 
     try {
       const response = await axios.get("http://localhost:5000/getStock", {
         headers: { Authorization: token },
       });
       setStocks(response.data);
-      setError(""); // Clear error if successful
+      setError("");
     } catch (error) {
       setError("Failed to fetch stocks. Please try again.");
       console.error("Error fetching stocks:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,8 +47,8 @@ const Inventory = () => {
       );
       setItem("");
       setQuantity("");
-      fetchStocks(); // Refresh list
-      setError(""); // Clear error on success
+      fetchStocks();
+      setError("");
     } catch (error) {
       setError("Failed to add stock. Please try again.");
       console.error("Error adding stock:", error);
@@ -54,8 +58,10 @@ const Inventory = () => {
   return (
     <div className="inventory-container">
       <h2>Inventory Management</h2>
-      <button onClick={logout} className="logout-button">Logout</button>
-      
+      <button onClick={logout} className="logout-button">
+        Logout
+      </button>
+
       <div className="add-stock-form">
         <input
           type="text"
@@ -73,15 +79,19 @@ const Inventory = () => {
       </div>
 
       <h3>Stock List</h3>
-      {error && <p className="error-message">{error}</p>} {/* Show errors */}
+      {error && <p className="error-message">{error}</p>}
 
-      <ul>
-        {stocks.map((stock) => (
-          <li key={stock._id}>
-            {stock.item} - {stock.quantity} 
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {stocks.map((stock) => (
+            <li key={stock._id}>
+              {stock.item} - {stock.quantity}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
