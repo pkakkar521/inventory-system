@@ -9,6 +9,7 @@ const Inventory = () => {
   const [quantity, setQuantity] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingStock, setEditingStock] = useState(null);
 
   useEffect(() => {
     if (token) fetchStocks();
@@ -55,12 +56,52 @@ const Inventory = () => {
     }
   };
 
+  const handleEditStock = (stock) => {
+    setEditingStock(stock);
+    setItem(stock.item);
+    setQuantity(stock.quantity);
+  };
+
+  const handleUpdateStock = async () => {
+    if (!editingStock) return;
+    if (!item || !quantity || isNaN(quantity) || Number(quantity) <= 0) {
+      setError("Please enter a valid item and quantity.");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:5000/updateStock/${editingStock._id}`,
+        { item, quantity: Number(quantity) },
+        { headers: { Authorization: token } }
+      );
+      setEditingStock(null);
+      setItem("");
+      setQuantity("");
+      fetchStocks();
+      setError("");
+    } catch (error) {
+      setError("Failed to update stock. Please try again.");
+      console.error("Error updating stock:", error);
+    }
+  };
+
+  const handleDeleteStock = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/deleteStock/${id}`, {
+        headers: { Authorization: token },
+      });
+      fetchStocks();
+    } catch (error) {
+      setError("Failed to delete stock. Please try again.");
+      console.error("Error deleting stock:", error);
+    }
+  };
+
   return (
     <div className="inventory-container">
       <h2>Inventory Management</h2>
-      <button onClick={logout} className="logout-button">
-        Logout
-      </button>
+      <button onClick={logout} className="logout-button">Logout</button>
 
       <div className="add-stock-form">
         <input
@@ -75,7 +116,11 @@ const Inventory = () => {
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
         />
-        <button onClick={handleAddStock}>Add Stock</button>
+        {editingStock ? (
+          <button onClick={handleUpdateStock}>Update Stock</button>
+        ) : (
+          <button onClick={handleAddStock}>Add Stock</button>
+        )}
       </div>
 
       <h3>Stock List</h3>
@@ -88,6 +133,8 @@ const Inventory = () => {
           {stocks.map((stock) => (
             <li key={stock._id}>
               {stock.item} - {stock.quantity}
+              <button onClick={() => handleEditStock(stock)}>Edit</button>
+              <button onClick={() => handleDeleteStock(stock._id)}>Delete</button>
             </li>
           ))}
         </ul>
