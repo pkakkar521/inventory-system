@@ -1,26 +1,26 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "../style/register.css"; // Use separate CSS for styling
+import "../style/register.css"; // Importing CSS for styling
 
 const Register = () => {
-  const [userId, setUserId] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("admin");
-  const [dbUri, setDbUri] = useState("");
+  const [mongoDBUri, setMongoDBUri] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post("http://localhost:5000/register", {
-        userId,
+        name,
+        email,
         password,
-        role,
-        dbUri,
+        mongoDBUri,
       });
 
-      if (response.data.success) {
+      if (response.status === 201) {
         alert(response.data.message);
         setTimeout(() => navigate("/login"), 1000);
       } else {
@@ -38,9 +38,17 @@ const Register = () => {
         <form onSubmit={handleRegister} className="register-form">
           <input
             type="text"
-            placeholder="User ID"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="register-input"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="register-input"
           />
@@ -52,24 +60,17 @@ const Register = () => {
             required
             className="register-input"
           />
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="register-dropdown"
-          >
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="user">User</option>
-          </select>
           <input
             type="text"
             placeholder="Your MongoDB Atlas Database URL"
-            value={dbUri}
-            onChange={(e) => setDbUri(e.target.value)}
+            value={mongoDBUri}
+            onChange={(e) => setMongoDBUri(e.target.value)}
             required
             className="register-input"
           />
-          <button type="submit" className="register-button">Register</button>
+          <button type="submit" className="register-button">
+            Register
+          </button>
         </form>
 
         <p className="already-account">Already have an account?</p>

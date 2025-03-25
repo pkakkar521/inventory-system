@@ -5,38 +5,40 @@ import AuthContext from "../context/AuthContext";
 import "../style/login.css";
 
 const Login = () => {
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState(""); // Changed from userId to email
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("admin");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true); // Disable button
+    setLoading(true);
 
     try {
       const response = await axios.post("http://localhost:5000/login", {
-        userId,
+        email, // Match with backend field
         password,
         role,
       });
 
-      if (!response.data.token || !response.data.dbUri) {
-        throw new Error("Invalid response from server");
-      }
+      if (response.status === 200) {
+        const { token, mongoDBUri } = response.data;
 
-      login(response.data.token, response.data.dbUri);
-      navigate("/inventory");
-    } catch (error) {
-      if (error.response) {
-        setError(error.response.data.message || "Invalid credentials!");
+        if (!token || !mongoDBUri) {
+          throw new Error("Invalid response from server");
+        }
+
+        login(token, mongoDBUri);
+        navigate("/inventory");
       } else {
-        setError("Server error, please try again!");
+        setError(response.data.message || "Login failed!");
       }
+    } catch (error) {
+      setError(error.response?.data?.message || "Invalid credentials!");
     } finally {
       setLoading(false);
     }
@@ -48,10 +50,10 @@ const Login = () => {
         <h2 className="login-title">Login</h2>
         <form onSubmit={handleLogin} className="login-form">
           <input
-            type="text"
-            placeholder="User ID"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="login-input"
           />
