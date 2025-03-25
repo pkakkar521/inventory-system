@@ -34,26 +34,42 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Step 1: Check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    console.log("User Found:", user);
 
-    // Compare password
+    if (!user) {
+      console.log("User not found for email:", email);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Step 2: Compare password
+    console.log("Entered Password:", password);
+    console.log("Stored Hashed Password:", user.password);
+
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    console.log("Password Match Result:", isMatch);
 
-    // Generate JWT without exposing mongoDBUri
+    if (!isMatch) {
+      console.log("Incorrect password for user:", email);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Step 3: Generate JWT
     const token = jwt.sign(
       { id: user._id }, // Only include user ID
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
+    console.log("JWT Generated:", token);
     res.json({ token });
+
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 module.exports = router;
