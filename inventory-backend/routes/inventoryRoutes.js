@@ -8,9 +8,9 @@ const router = express.Router();
 // CREATE Inventory Item
 router.post("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.db) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
 
-        const Inventory = req.db.model("Inventory", InventorySchema);
+        const Inventory = req.Inventory.model("Inventory", InventorySchema);
         const { name, quantity, price, description } = req.body;
         
         const newItem = new Inventory({ name, quantity, price, description, userId: req.user.id });
@@ -26,9 +26,9 @@ router.post("/", authMiddleware, connectToUserDB, async (req, res) => {
 // READ Inventory Items
 router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.db) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
 
-        const Inventory = req.db.model("Inventory", InventorySchema);
+        const Inventory = req.Inventory.model("Inventory", InventorySchema);
         const items = await Inventory.find({ userId: req.user.id }); // Only fetch user's items
         
         res.status(200).json(items);
@@ -41,9 +41,9 @@ router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
 // UPDATE Inventory Item
 router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.db) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
 
-        const Inventory = req.db.model("Inventory", InventorySchema);
+        const Inventory = req.Inventory.model("Inventory", InventorySchema);
         const updatedItem = await Inventory.findOneAndUpdate(
             { _id: req.params.id, userId: req.user.id }, // Ensure user owns the item
             req.body,
@@ -62,9 +62,9 @@ router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
 // DELETE Inventory Item
 router.delete("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.db) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
 
-        const Inventory = req.db.model("Inventory", InventorySchema);
+        const Inventory = req.Inventory.model("Inventory", InventorySchema);
         const deletedItem = await Inventory.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
 
         if (!deletedItem) return res.status(404).json({ message: "Item not found or unauthorized" });
