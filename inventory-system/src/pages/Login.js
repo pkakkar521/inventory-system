@@ -17,32 +17,35 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+  
     try {
-      const response = await axios.post("http://localhost:5000/login", {
-        email, // Match with backend field
-        password,
-        role,
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password
       });
-
+  
+      console.log("Server Response:", response.data); // Debugging log
+  
       if (response.status === 200) {
         const { token, mongoDBUri } = response.data;
-
-        if (!token || !mongoDBUri) {
-          throw new Error("Invalid response from server");
+  
+        if (!token) {
+          throw new Error("Token not received from server");
         }
-
-        login(token, mongoDBUri);
+  
+        login(token, mongoDBUri || ""); // Handle cases where mongoDBUri is missing
         navigate("/inventory");
       } else {
         setError(response.data.message || "Login failed!");
       }
     } catch (error) {
+      console.error("Login Error:", error);
       setError(error.response?.data?.message || "Invalid credentials!");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="login-container">
