@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import "../style/inventory.css"
 
 const Inventory = () => {
   const { token, logout } = useContext(AuthContext);

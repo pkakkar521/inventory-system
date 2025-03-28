@@ -17,19 +17,26 @@ const connectToUserDB = async (req, res, next) => {
         }
 
         const userDbUri = user.mongoDBUri;
+
+        // If not already connected, establish a new connection
         if (!connections[userDbUri]) {
+            console.log("⚠️ Disconnecting from Central Database...");
+            await mongoose.disconnect(); // Disconnect from central DB
+
+            console.log(`🔗 Connecting to User Database: ${userDbUri}`);
             const conn = await mongoose.createConnection(userDbUri, {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
             });
 
             connections[userDbUri] = conn.model("Inventory", InventorySchema);
+            console.log(`✅ Successfully connected to User Database: ${userDbUri}`);
         }
 
         req.Inventory = connections[userDbUri]; // Attach Inventory model to request
         next();
     } catch (error) {
-        console.error("Database Connection Error:", error);
+        console.error("❌ Database Connection Error:", error);
         res.status(500).json({ message: "Database connection failed" });
     }
 };
