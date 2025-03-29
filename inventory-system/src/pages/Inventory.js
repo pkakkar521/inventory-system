@@ -1,26 +1,58 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Sidebar from "../components/Sidebar";
-import InventoryList from "../components/InventoryList";
-import AddItem from "../components/AddItem";
-import EditItem from "../components/EditItem";
 import "../style/inventory.css";
 
-const Inventory = () => {
-  const [activeComponent, setActiveComponent] = useState("list");
-  const [editingItem, setEditingItem] = useState(null);
+const Inventory = ({ apiUrl }) => {
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [totalValue, setTotalValue] = useState(0);
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setActiveComponent("edit");
-  };
+  // Fetch inventory data
+  useEffect(() => {
+    axios.get(apiUrl)
+      .then((response) => {
+        const sortedItems = response.data.sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date));
+        setItems(sortedItems);
+        // Calculate total value
+        const value = sortedItems.reduce((acc, item) => acc + Number(item.price) * Number(item.quantity), 0);
+        setTotalValue(value);
+      })
+      .catch((error) => console.error("Error fetching items:", error));
+  }, [apiUrl]);
 
   return (
-    <div className="inventory-layout">
-      <Sidebar setActiveComponent={setActiveComponent} />
+    <div className="dashboard-container">
+      <Sidebar />
       <div className="content">
-        {activeComponent === "list" && <InventoryList onEdit={handleEdit} />}
-        {activeComponent === "add" && <AddItem setActiveComponent={setActiveComponent} />}
-        {activeComponent === "edit" && <EditItem item={editingItem} setActiveComponent={setActiveComponent} />}
+        <h2>Inventory Dashboard</h2>
+
+        {/* Navigation Buttons */}
+        <div className="button-group mb-4"> {/* Added margin for spacing */}
+          <button className="btn btn-success me-2" onClick={() => navigate("/add-item", { state: { apiUrl } })}>
+            Add Inventory
+          </button>
+          <button className="btn btn-warning me-2" onClick={() => navigate("/edit-item", { state: { apiUrl } })}>
+            Edit Inventory
+          </button>
+          <button className="btn btn-danger" onClick={() => navigate("/delete-item", { state: { apiUrl } })}>
+            Delete Inventory
+          </button>
+        </div>
+
+        {/* Bill Summary BELOW Buttons */}
+        <h3>Bill Summary</h3>
+        <div className="card-container">
+          <div className="card">
+            <h4>Total Items</h4>
+            <p>{items.length}</p>
+          </div>
+          <div className="card">
+            <h4>Total Value</h4>
+            <p>${totalValue.toFixed(2)}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
