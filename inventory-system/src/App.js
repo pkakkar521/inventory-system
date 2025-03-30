@@ -1,26 +1,38 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import PrivateRoute from "./routes/PrivateRoute";
+import AddItem from "./pages/AddItem";
+import EditItem from "./pages/EditItem";
+import Inventory from "./pages/Inventory";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Inventory from "./pages/Inventory";
+import PrivateRoute from "./routes/PrivateRoute";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"; 
 
 const App = () => {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Default landing page set to Register */}
           <Route path="/" element={<Register />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           
-          {/* Private route for Inventory */}
           <Route element={<PrivateRoute />}>
-            <Route path="/inventory" element={<Inventory />} />
+            <Route 
+              path="/inventory" 
+              element={<Inventory apiUrl={`${API_BASE_URL}/api/inventory`} />}
+            />
+            <Route 
+              path="/add-item"
+              element={<AddItem />}
+            />
+            <Route
+              path="/edit-item"
+              element={<EditItem />}
+            />
           </Route>
 
-          {/* Redirect any unknown route to Register */}
           <Route path="*" element={<Register />} />
         </Routes>
       </Router>
