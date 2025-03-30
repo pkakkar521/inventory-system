@@ -1,55 +1,59 @@
 const express = require("express");
-const connectToUserDB = require("../middleware/dbConnection");
+const { connectToUserDB } = require("../middleware/dbConnection");
 const authMiddleware = require("../middleware/authMiddleware");
-const InventorySchema = require("../models/Inventory");
 
 const router = express.Router();
 
-// CREATE Inventory Item
 router.post("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) {
+             console.error("Inventory model not attached to request in POST /");
+             return res.status(500).json({ message: "Database context not available" });
+        }
 
-        const Inventory = req.Inventory.model("Inventory", InventorySchema);
-        const { name, quantity, price, description, expiry_date } = req.body;
-        
+        const Inventory = req.Inventory;
+        const { name, quantity, price, expiry_date } = req.body;
+
         if (!name || !quantity || !price || !expiry_date) {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        const newItem = new Inventory({ 
-            name, 
-            quantity, 
-            price, 
-            description, 
+        console.log('User object in route handler:', req.user);
+
+        const newItem = new Inventory({
+            name,
+            quantity,
+            price,
             expiry_date,
-            userId: req.user.id 
+            user: req.user.id
         });
 
         await newItem.save();
         res.status(201).json({
             message: "Item added successfully",
-            item: newItem  // Returning response in Flask-like format
+            item: newItem
         });
 
     } catch (error) {
-        console.error("Error creating inventory item:", error);
-        res.status(500).json({ message: "Error creating inventory item" });
+        console.error("Detailed error creating inventory item:", error);
+        res.status(500).json({ message: "Error saving inventory item to database" });
     }
 });
 
-// READ Inventory Items (Sorted by Expiry Date)
 router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) {
+             console.error("Inventory model not attached to request in GET /");
+             return res.status(500).json({ message: "Database context not available" });
+        }
 
-        const Inventory = req.Inventory.model("Inventory", InventorySchema);
-        const items = await Inventory.find({ userId: req.user.id }) 
-                                    .sort({ expiry_date: 1 }); // Sorting in ascending order
+        const Inventory = req.Inventory;
+        const items = await Inventory.find({ user: req.user.id })
+                                    .sort({ expiry_date: 1 });
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: "Items fetched successfully",
-            items: items // Keeping response structure consistent with Flask API
+            items: items
         });
 
     } catch (error) {
@@ -58,17 +62,46 @@ router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
-// UPDATE Inventory Item
+router.get("/:id", authMiddleware, connectToUserDB, async (req, res) => {
+    try {
+        if (!req.Inventory) {
+             console.error("Inventory model not attached to request in GET /:id");
+             return res.status(500).json({ message: "Database context not available" });
+        }
+
+        const Inventory = req.Inventory;
+        const item = await Inventory.findOne({ _id: req.params.id, user: req.user.id });
+
+        if (!item) {
+            return res.status(404).json({ message: "Item not found or unauthorized" });
+        }
+
+        res.status(200).json(item);
+
+    } catch (error) {
+        console.error(`Error fetching inventory item ${req.params.id}:`, error);
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: "Invalid item ID format" });
+        }
+        console.error(`Unhandled error fetching item ${req.params.id}:`, error);
+        res.status(500).json({ message: "Error fetching inventory item" });
+    }
+});
+
+
 router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) {
+             console.error("Inventory model not attached to request in PUT /:id");
+             return res.status(500).json({ message: "Database context not available" });
+        }
 
-        const Inventory = req.Inventory.model("Inventory", InventorySchema);
-        const { name, quantity, price, description, expiry_date } = req.body;
+        const Inventory = req.Inventory;
+        const { name, quantity, price, expiry_date } = req.body;
 
         const updatedItem = await Inventory.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user.id }, 
-            { name, quantity, price, description, expiry_date }, 
+            { _id: req.params.id, user: req.user.id },
+            { name, quantity, price, expiry_date },
             { new: true }
         );
 
@@ -85,13 +118,15 @@ router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
-// DELETE Inventory Item
 router.delete("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
-        if (!req.Inventory) return res.status(500).json({ message: "Database connection error" });
+        if (!req.Inventory) {
+             console.error("Inventory model not attached to request in DELETE /:id");
+             return res.status(500).json({ message: "Database context not available" });
+        }
 
-        const Inventory = req.Inventory.model("Inventory", InventorySchema);
-        const deletedItem = await Inventory.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        const Inventory = req.Inventory;
+        const deletedItem = await Inventory.findOneAndDelete({ _id: req.params.id, user: req.user.id });
 
         if (!deletedItem) return res.status(404).json({ message: "Item not found or unauthorized" });
 
