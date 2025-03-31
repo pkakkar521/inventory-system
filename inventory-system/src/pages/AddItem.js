@@ -3,7 +3,7 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import AuthContext from "../context/AuthContext";
-import "../style/inventory.css";
+import "../style/addItem.css";
 
 const AddItem = () => {
   const { token } = useContext(AuthContext);
