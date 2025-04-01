@@ -2,6 +2,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AddItem from "./pages/AddItem";
 import EditItem from "./pages/EditItem";
+import DeleteItem from "./pages/DeleteItem"
 import Inventory from "./pages/Inventory";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -31,7 +32,12 @@ const App = () => {
               path="/edit-item"
               element={<EditItem />}
             />
+            <Route
+              path="/delete-item"
+              element={<DeleteItem />}
+            />
           </Route>
+          
 
           <Route path="*" element={<Register />} />
         </Routes>

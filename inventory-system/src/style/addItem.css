@@ -103,6 +103,7 @@ button, .btn {
 .btn-secondary {
   background-color: #6c757d;
   color: white;
+  margin-bottom: 20px;
 }
 
 .btn-secondary:hover {
