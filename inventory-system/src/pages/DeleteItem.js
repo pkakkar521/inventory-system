@@ -9,9 +9,12 @@ const DeleteItem = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { token } = useContext(AuthContext);
+
     const [items, setItems] = useState([]);
     const [selectedItemId, setSelectedItemId] = useState('');
-    const [quantityToReduce, setQuantityToReduce] = useState('');
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [quantityToSell, setQuantityToSell] = useState(1);
+    const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -37,42 +40,64 @@ const DeleteItem = () => {
     }, [apiUrlBase, token]);
 
     const handleItemSelectionChange = (e) => {
-        setSelectedItemId(e.target.value);
+        const itemId = e.target.value;
+        setSelectedItemId(itemId);
+        const item = items.find(i => i._id === itemId);
+        setSelectedItem(item || null);
+        setQuantityToSell(1);
+        setError('');
+        setSuccess('');
     };
 
-    const handleQuantityChange = (e) => {
-        setQuantityToReduce(e.target.value);
-    };
+    const handleAddToCart = () => {
+        if (!selectedItem || quantityToSell < 1) return;
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!selectedItemId || !quantityToReduce) {
-            setError("Please select an item and enter quantity to reduce.");
+        // Check if already in cart
+        const alreadyInCart = cart.find(i => i._id === selectedItem._id);
+        if (alreadyInCart) {
+            setError("Item already in cart. Remove it before adding again.");
             return;
         }
+
+        setCart([...cart, { ...selectedItem, quantity: quantityToSell }]);
+        setSelectedItemId('');
+        setSelectedItem(null);
+        setQuantityToSell(1);
+        setSuccess('Item added to cart.');
+        setError('');
+    };
+
+    const handleSell = async () => {
+        if (cart.length === 0) return;
+
         setLoading(true);
         setError('');
         setSuccess('');
 
-        axios.put(`${apiUrlBase}/${selectedItemId}/reduce`, { quantity: Number(quantityToReduce) }, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-            .then(response => {
-                setSuccess(`Reduced ${quantityToReduce} units from "${response.data.name}" successfully!`);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Error reducing quantity:", err);
-                setError(err.response?.data?.message || "Failed to update item.");
-                setLoading(false);
-            });
+        try {
+            for (const item of cart) {
+                await axios.put(`${apiUrlBase}/${item._id}/reduce`, { quantity: item.quantity }, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
+            setCart([]);
+            setSuccess("Items sold successfully!");
+            // Refresh items
+            const response = await axios.get(apiUrlBase, { headers: { 'Authorization': `Bearer ${token}` } });
+            setItems(response.data.items || []);
+        } catch (err) {
+            console.error("Sell error:", err);
+            setError("Failed to complete sale.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="dashboard-container">
             <Sidebar />
             <div className="content delete-item-content">
-                <h2>Reduce Item Quantity</h2>
+                <h2>Sell Items</h2>
 
                 {error && <p className="error-message">{error}</p>}
                 {success && <p className="success-message">{success}</p>}
@@ -94,30 +119,49 @@ const DeleteItem = () => {
                     </select>
                 </div>
 
-                {selectedItemId && (
-                    <form onSubmit={handleSubmit} className="delete-item-form">
-                        <div className="form-group">
-                            <label htmlFor="quantity">Quantity to Reduce:</label>
-                            <input
-                                type="number"
-                                id="quantity"
-                                name="quantity"
-                                value={quantityToReduce}
-                                onChange={handleQuantityChange}
-                                required
-                                min="1"
-                                disabled={loading}
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? 'Updating...' : 'Reduce Quantity'}
+                <div className="split-section">
+                    {/* Left - Item Info + Add to Cart */}
+                    <div className="left-panel">
+                        {selectedItem && (
+                            <>
+                                <h3>Item Info</h3>
+                                <p><strong>Name:</strong> {selectedItem.name}</p>
+                                <p><strong>Available Quantity:</strong> {selectedItem.quantity}</p>
+                                <label htmlFor="quantity-sell">Quantity to Sell:</label>
+                                <select
+                                    id="quantity-sell"
+                                    value={quantityToSell}
+                                    onChange={(e) => setQuantityToSell(Number(e.target.value))}
+                                    disabled={loading}
+                                >
+                                    {[...Array(selectedItem.quantity).keys()].map(q => (
+                                        <option key={q + 1} value={q + 1}>{q + 1}</option>
+                                    ))}
+                                </select>
+                                <button className="btn btn-primary" onClick={handleAddToCart} disabled={loading}>
+                                    Add to Cart
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Right - Cart */}
+                    <div className="right-panel">
+                        <h3>Cart</h3>
+                        {cart.length === 0 ? <p>No items in cart.</p> : (
+                            <ul>
+                                {cart.map(item => (
+                                    <li key={item._id}>
+                                        {item.name} — {item.quantity} unit(s)
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <button className="btn btn-success" onClick={handleSell} disabled={cart.length === 0 || loading}>
+                            {loading ? 'Selling...' : 'Sell'}
                         </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => navigate('/inventory')} style={{ marginLeft: '10px' }}>
-                            Cancel
-                        </button>
-                    </form>
-                )}
-                {loading && <p>Loading...</p>}
+                    </div>
+                </div>
             </div>
         </div>
     );
