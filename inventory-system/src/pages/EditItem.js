@@ -15,6 +15,7 @@ const EditItem = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
 
     const apiUrlBase = location.state?.apiUrl || process.env.REACT_APP_API_URL || 'http://localhost:5000/api/inventory';
 
@@ -36,42 +37,26 @@ const EditItem = () => {
             });
     }, [apiUrlBase, token]);
 
-    useEffect(() => {
-        if (!selectedItemId || !token) {
-            setCurrentItem({ name: '', quantity: '', price: '', expiry_date: '' });
-            return;
-        }
-        setLoading(true);
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(currentItem.name.toLowerCase())
+    );
+
+    const handleSearchSelect = (item) => {
+        setCurrentItem({
+            name: item.name || '',
+            quantity: item.quantity || '',
+            price: item.price || '',
+            expiry_date: item.expiry_date ? new Date(item.expiry_date).toISOString().split('T')[0] : ''
+        });
+        setSelectedItemId(item._id);
+        setShowSearch(false);
         setError('');
         setSuccess('');
-        axios.get(`${apiUrlBase}/${selectedItemId}`, { headers: { 'Authorization': `Bearer ${token}` } })
-            .then(response => {
-                const item = response.data;
-                const expiryDateFormatted = item.expiry_date ? new Date(item.expiry_date).toISOString().split('T')[0] : '';
-                setCurrentItem({
-                    name: item.name || '',
-                    quantity: item.quantity || '',
-                    price: item.price || '',
-                    expiry_date: expiryDateFormatted
-                });
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(`Error fetching item ${selectedItemId}:`, err);
-                const backendErrorMessage = err.response?.data?.message;
-                setError(backendErrorMessage || "Failed to load item details. Check connection or item ID.");
-                setCurrentItem({ name: '', quantity: '', price: '', expiry_date: '' });
-                setLoading(false);
-            });
-    }, [selectedItemId, apiUrlBase, token]);
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setCurrentItem(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleItemSelectionChange = (e) => {
-        setSelectedItemId(e.target.value);
     };
 
     const handleSubmit = (e) => {
@@ -112,13 +97,11 @@ const EditItem = () => {
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
-            if (isNaN(day) || isNaN(month) || isNaN(year)) return 'Invalid Date';
             return `${day}-${month}-${year}`;
         } catch (e) {
             return 'Invalid Date';
         }
     };
-
 
     return (
         <div className="dashboard-container">
@@ -129,21 +112,36 @@ const EditItem = () => {
                 {error && <p className="error-message">{error}</p>}
                 {success && <p className="success-message">{success}</p>}
 
-                <div className="item-selector-container">
-                    <label htmlFor="item-select">Select Item to Edit:</label>
-                    <select
-                        id="item-select"
-                        value={selectedItemId}
-                        onChange={handleItemSelectionChange}
-                        disabled={loading || items.length === 0}
-                    >
-                        <option value="">-- Select an Item --</option>
-                        {items.map(item => (
-                            <option key={item._id} value={item._id}>
-                                {item.name} (Expires: {formatDateForDisplay(item.expiry_date)})
-                            </option>
-                        ))}
-                    </select>
+                <div className="item-selector-container" style={{ position: 'relative' }}>
+                    <label htmlFor="search-item">Search Item to Edit:</label>
+                    <input
+                        type="text"
+                        id="search-item"
+                        placeholder="Type item name..."
+                        value={currentItem.name}
+                        onChange={(e) => {
+                            setCurrentItem(prev => ({ ...prev, name: e.target.value }));
+                            setShowSearch(true);
+                        }}
+                        onFocus={() => setShowSearch(true)}
+                        autoComplete="off"
+                    />
+                    {showSearch && filteredItems.length > 0 && (
+                        <ul className="search-results">
+                            {filteredItems.map(item => (
+                                <li
+                                    key={item._id}
+                                    className="search-result-item"
+                                    onClick={() => handleSearchSelect(item)}
+                                >
+                                    {item.name} (Expires: {formatDateForDisplay(item.expiry_date)})
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {showSearch && currentItem.name && filteredItems.length === 0 && (
+                        <p className="no-results">No matching items found.</p>
+                    )}
                 </div>
 
                 {selectedItemId && (
@@ -201,12 +199,17 @@ const EditItem = () => {
                         <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? 'Updating...' : 'Update Item'}
                         </button>
-                         <button type="button" className="btn btn-secondary" onClick={() => navigate('/inventory')} style={{ marginLeft: '10px' }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => navigate('/inventory')}
+                            style={{ marginLeft: '10px' }}
+                        >
                             Cancel
                         </button>
                     </form>
                 )}
-                 {loading && <p>Loading...</p>}
+                {loading && <p>Loading...</p>}
             </div>
         </div>
     );

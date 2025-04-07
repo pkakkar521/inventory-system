@@ -18,6 +18,7 @@ const DeleteItem = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [searchText, setSearchText] = useState('');
 
     const apiUrlBase = location.state?.apiUrl || process.env.REACT_APP_API_URL || 'http://localhost:5000/api/inventory';
 
@@ -39,12 +40,15 @@ const DeleteItem = () => {
             });
     }, [apiUrlBase, token]);
 
-    const handleItemSelectionChange = (e) => {
-        const itemId = e.target.value;
-        setSelectedItemId(itemId);
-        const item = items.find(i => i._id === itemId);
-        setSelectedItem(item || null);
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+
+    const handleItemSelection = (item) => {
+        setSelectedItemId(item._id);
+        setSelectedItem(item);
         setQuantityToSell(1);
+        setSearchText('');
         setError('');
         setSuccess('');
     };
@@ -52,7 +56,6 @@ const DeleteItem = () => {
     const handleAddToCart = () => {
         if (!selectedItem || quantityToSell < 1) return;
 
-        // Check if already in cart
         const alreadyInCart = cart.find(i => i._id === selectedItem._id);
         if (alreadyInCart) {
             setError("Item already in cart. Remove it before adding again.");
@@ -82,7 +85,6 @@ const DeleteItem = () => {
             }
             setCart([]);
             setSuccess("Items sold successfully!");
-            // Refresh items
             const response = await axios.get(apiUrlBase, { headers: { 'Authorization': `Bearer ${token}` } });
             setItems(response.data.items || []);
         } catch (err) {
@@ -102,21 +104,33 @@ const DeleteItem = () => {
                 {error && <p className="error-message">{error}</p>}
                 {success && <p className="success-message">{success}</p>}
 
-                <div className="item-selector-container">
-                    <label htmlFor="item-select">Select Item:</label>
-                    <select
-                        id="item-select"
-                        value={selectedItemId}
-                        onChange={handleItemSelectionChange}
+                {/* Updated Search Input for Item Selection */}
+                <div className="item-selector-container" style={{ position: 'relative' }}>
+                    <label htmlFor="item-search">Search Item:</label>
+                    <input
+                        type="text"
+                        id="item-search"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Type item name..."
                         disabled={loading || items.length === 0}
-                    >
-                        <option value="">-- Select an Item --</option>
-                        {items.map(item => (
-                            <option key={item._id} value={item._id}>
-                                {item.name} (Available: {item.quantity})
-                            </option>
-                        ))}
-                    </select>
+                    />
+                    {searchText && filteredItems.length > 0 && (
+                        <ul className="search-results">
+                            {filteredItems.map(item => (
+                                <li
+                                    key={item._id}
+                                    onClick={() => handleItemSelection(item)}
+                                    className="search-result-item"
+                                >
+                                    {item.name} (Available: {item.quantity})
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {searchText && filteredItems.length === 0 && (
+                        <p className="no-results">No matching items found.</p>
+                    )}
                 </div>
 
                 <div className="split-section">
