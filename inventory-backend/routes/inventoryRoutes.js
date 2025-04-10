@@ -118,24 +118,42 @@ router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
-router.delete("/:id", authMiddleware, connectToUserDB, async (req, res) => {
+// PUT /api/inventory/:id/reduce
+router.put("/:id/reduce", authMiddleware, connectToUserDB, async (req, res) => {
     try {
+        const { id } = req.params;
+        const { quantity } = req.body;
+
         if (!req.Inventory) {
-             console.error("Inventory model not attached to request in DELETE /:id");
-             return res.status(500).json({ message: "Database context not available" });
+            return res.status(500).json({ message: "Database not connected." });
+        }
+
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
 
         const Inventory = req.Inventory;
-        const deletedItem = await Inventory.findOneAndDelete({ _id: req.params.id, user: req.user.id });
 
-        if (!deletedItem) return res.status(404).json({ message: "Item not found or unauthorized" });
+        const item = await Inventory.findOne({ _id: id, user: req.user.id });
 
-        res.status(200).json({ message: "Item deleted successfully" });
+        if (!item) {
+            return res.status(404).json({ message: "Item not found." });
+        }
+
+        if (item.quantity < quantity) {
+            return res.status(400).json({ message: "Not enough quantity available." });
+        }
+
+        item.quantity -= quantity;
+        await item.save();
+
+        return res.status(200).json({ message: "Item quantity reduced successfully.", item });
 
     } catch (error) {
-        console.error("Error deleting inventory item:", error);
-        res.status(500).json({ message: "Error deleting inventory item" });
+        console.error("Error reducing item quantity:", error);
+        return res.status(500).json({ message: "Internal server error." });
     }
 });
+
 
 module.exports = router;
