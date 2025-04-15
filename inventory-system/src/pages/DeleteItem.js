@@ -104,7 +104,6 @@ const DeleteItem = () => {
                 {error && <p className="error-message">{error}</p>}
                 {success && <p className="success-message">{success}</p>}
 
-                {/* Updated Search Input for Item Selection */}
                 <div className="item-selector-container" style={{ position: 'relative' }}>
                     <label htmlFor="item-search">Search Item:</label>
                     <input
@@ -141,6 +140,8 @@ const DeleteItem = () => {
                                 <h3>Item Info</h3>
                                 <p><strong>Name:</strong> {selectedItem.name}</p>
                                 <p><strong>Available Quantity:</strong> {selectedItem.quantity}</p>
+                                <p><strong>Price per Unit:</strong> ₹{selectedItem.price}</p>
+                                <p><strong>Total Price:</strong> ₹{selectedItem.price * quantityToSell}</p>
                                 <label htmlFor="quantity-sell">Quantity to Sell:</label>
                                 <select
                                     id="quantity-sell"
@@ -166,10 +167,15 @@ const DeleteItem = () => {
                             <ul>
                                 {cart.map(item => (
                                     <li key={item._id}>
-                                        {item.name} — {item.quantity} unit(s)
+                                        {item.name} — {item.quantity} unit(s) × ₹{item.price} = ₹{item.quantity * item.price}
                                     </li>
                                 ))}
                             </ul>
+                        )}
+                        {cart.length > 0 && (
+                            <p className="total-billing">
+                                <strong>Total Billing Price:</strong> ₹{cart.reduce((acc, item) => acc + item.quantity * item.price, 0)}
+                            </p>
                         )}
                         <button className="btn btn-success" onClick={handleSell} disabled={cart.length === 0 || loading}>
                             {loading ? 'Selling...' : 'Sell'}
