@@ -95,6 +95,10 @@ const DeleteItem = () => {
         }
     };
 
+    const totalBeforeDiscount = cart.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const discount = totalBeforeDiscount * 0.15;
+    const totalAfterDiscount = totalBeforeDiscount - discount;
+
     return (
         <div className="dashboard-container">
             <Sidebar />
@@ -141,7 +145,7 @@ const DeleteItem = () => {
                                 <p><strong>Name:</strong> {selectedItem.name}</p>
                                 <p><strong>Available Quantity:</strong> {selectedItem.quantity}</p>
                                 <p><strong>Price per Unit:</strong> ₹{selectedItem.price}</p>
-                                <p><strong>Total Price:</strong> ₹{selectedItem.price * quantityToSell}</p>
+                                <p><strong>Total Price:</strong> ₹{(selectedItem.price * quantityToSell).toFixed(2)}</p>
                                 <label htmlFor="quantity-sell">Quantity to Sell:</label>
                                 <select
                                     id="quantity-sell"
@@ -167,15 +171,23 @@ const DeleteItem = () => {
                             <ul>
                                 {cart.map(item => (
                                     <li key={item._id}>
-                                        {item.name} — {item.quantity} unit(s) × ₹{item.price} = ₹{item.quantity * item.price}
+                                        {item.name} — {item.quantity} unit(s) × ₹{item.price} = ₹{(item.quantity * item.price).toFixed(2)}
                                     </li>
                                 ))}
                             </ul>
                         )}
                         {cart.length > 0 && (
-                            <p className="total-billing">
-                                <strong>Total Billing Price:</strong> ₹{cart.reduce((acc, item) => acc + item.quantity * item.price, 0)}
-                            </p>
+                            <>
+                                <p className="total-billing">
+                                    <strong>Total Before Discount:</strong> ₹{totalBeforeDiscount.toFixed(2)}
+                                </p>
+                                <p className="total-billing">
+                                    <strong>Discount (15%):</strong> ₹{discount.toFixed(2)}
+                                </p>
+                                <p className="total-billing">
+                                    <strong>Total After Discount:</strong> ₹{totalAfterDiscount.toFixed(2)}
+                                </p>
+                            </>
                         )}
                         <button className="btn btn-success" onClick={handleSell} disabled={cart.length === 0 || loading}>
                             {loading ? 'Selling...' : 'Sell'}
