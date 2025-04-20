@@ -5,23 +5,26 @@ import Sidebar from "../components/Sidebar";
 import AuthContext from "../context/AuthContext";
 import "../style/inventory.css";
 
+// Number of items to show per page
 const ITEMS_PER_PAGE = 10;
 
 const Inventory = ({ apiUrl }) => {
   const navigate = useNavigate();
-  const [allItems, setAllItems] = useState([]);
-  const [totalValue, setTotalValue] = useState(0);
-  const { token } = useContext(AuthContext);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [allItems, setAllItems] = useState([]); // All inventory items
+  const [totalValue, setTotalValue] = useState(0); // Total value of inventory
+  const { token } = useContext(AuthContext); // Auth token from context
+  const [currentPage, setCurrentPage] = useState(1); // Current pagination page
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(''); // Error message
 
+  // Fetch inventory items when component mounts or dependencies change
   useEffect(() => {
     if (!token) {
       console.error("No token found, cannot fetch inventory.");
       setError("Authentication required.");
       return;
     }
+
     setLoading(true);
     setError('');
 
@@ -29,37 +32,47 @@ const Inventory = ({ apiUrl }) => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then((response) => {
+        // Get items and sort by expiry date
         const fetchedItems = response.data.items || [];
         const sortedItems = fetchedItems.sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date));
         setAllItems(sortedItems);
 
+        // Calculate total inventory value
         const value = sortedItems.reduce((acc, item) => acc + Number(item.price) * Number(item.quantity), 0);
         setTotalValue(value);
+
         setLoading(false);
       })
       .catch((err) => {
-          console.error("Error fetching items:", err);
-          setError("Failed to fetch inventory items.");
-          if (err.response && err.response.status === 401) {
-              console.error("Unauthorized access. Redirecting to login might be needed.");
-          }
-          setLoading(false);
+        console.error("Error fetching items:", err);
+        setError("Failed to fetch inventory items.");
+
+        // Handle unauthorized access
+        if (err.response && err.response.status === 401) {
+          console.error("Unauthorized access. Redirecting to login might be needed.");
+        }
+
+        setLoading(false);
       });
   }, [apiUrl, token]);
 
+  // Calculate pagination details
   const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = allItems.slice(startIndex, endIndex);
+  const currentItems = allItems.slice(startIndex, endIndex); // Items on current page
 
+  // Navigate to next pagination page
   const goToNextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
+  // Navigate to previous pagination page
   const goToPreviousPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   };
 
+  // Format date into DD-MM-YYYY format
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -81,6 +94,7 @@ const Inventory = ({ apiUrl }) => {
       <div className="content">
         <h2>Inventory Dashboard</h2>
 
+        {/* Navigation buttons */}
         <div className="button-group mb-4">
           <button className="btn btn-success me-2" onClick={() => navigate("/add-item", { state: { apiUrl } })}>
             Add Inventory
@@ -93,6 +107,7 @@ const Inventory = ({ apiUrl }) => {
           </button>
         </div>
 
+        {/* Summary section */}
         <h3>Bill Summary</h3>
         <div className="card-container">
           <div className="card">
@@ -105,6 +120,7 @@ const Inventory = ({ apiUrl }) => {
           </div>
         </div>
 
+        {/* Inventory table */}
         <h3>Inventory List</h3>
         {loading && <p>Loading inventory...</p>}
         {error && <p className="error-message">{error}</p>}
@@ -122,6 +138,7 @@ const Inventory = ({ apiUrl }) => {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Render each item row */}
                   {currentItems.length > 0 ? (
                     currentItems.map((item) => (
                       <tr key={item._id}>
@@ -141,6 +158,7 @@ const Inventory = ({ apiUrl }) => {
               </table>
             </div>
 
+            {/* Pagination controls */}
             {totalPages > 1 && (
               <div className="pagination-controls" style={{ textAlign: 'center', marginTop: '20px' }}>
                 <button

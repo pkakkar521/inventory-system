@@ -9,16 +9,23 @@ const EditItem = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { token } = useContext(AuthContext);
+
+    // State to hold all inventory items
     const [items, setItems] = useState([]);
+    // Selected item ID for updating
     const [selectedItemId, setSelectedItemId] = useState('');
+    // State for current item's form fields
     const [currentItem, setCurrentItem] = useState({ name: '', quantity: '', price: '', expiry_date: '' });
+    // UI states
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showSearch, setShowSearch] = useState(false);
 
+    // API base URL (passed from state or fallback to env/localhost)
     const apiUrlBase = location.state?.apiUrl || process.env.REACT_APP_API_URL || 'http://localhost:5000/api/inventory';
 
+    // Fetch inventory items on component mount
     useEffect(() => {
         if (!token) {
             setError("Authentication required.");
@@ -37,10 +44,12 @@ const EditItem = () => {
             });
     }, [apiUrlBase, token]);
 
+    // Filter items based on current name input (for search dropdown)
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(currentItem.name.toLowerCase())
     );
 
+    // Handle selection from search result
     const handleSearchSelect = (item) => {
         setCurrentItem({
             name: item.name || '',
@@ -54,21 +63,27 @@ const EditItem = () => {
         setSuccess('');
     };
 
+    // Handle input change for form fields
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setCurrentItem(prev => ({ ...prev, [name]: value }));
     };
 
+    // Handle form submission to update item
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // Validation: no item selected
         if (!selectedItemId) {
             setError("Please select an item to update.");
             return;
         }
+
         setLoading(true);
         setError('');
         setSuccess('');
 
+        // Prepare data to send
         const payload = {
             name: currentItem.name,
             quantity: Number(currentItem.quantity),
@@ -76,6 +91,7 @@ const EditItem = () => {
             expiry_date: currentItem.expiry_date
         };
 
+        // Send PUT request to update item
         axios.put(`${apiUrlBase}/${selectedItemId}`, payload, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -90,6 +106,7 @@ const EditItem = () => {
             });
     };
 
+    // Format date to DD-MM-YYYY format
     const formatDateForDisplay = (dateString) => {
         if (!dateString) return 'N/A';
         try {
@@ -109,9 +126,11 @@ const EditItem = () => {
             <div className="content edit-item-content">
                 <h2>Edit Inventory Item</h2>
 
+                {/* Display messages */}
                 {error && <p className="error-message">{error}</p>}
                 {success && <p className="success-message">{success}</p>}
 
+                {/* Search bar for selecting item */}
                 <div className="item-selector-container" style={{ position: 'relative' }}>
                     <label htmlFor="search-item">Search Item to Edit:</label>
                     <input
@@ -126,6 +145,8 @@ const EditItem = () => {
                         onFocus={() => setShowSearch(true)}
                         autoComplete="off"
                     />
+
+                    {/* Show search results */}
                     {showSearch && filteredItems.length > 0 && (
                         <ul className="search-results">
                             {filteredItems.map(item => (
@@ -139,11 +160,14 @@ const EditItem = () => {
                             ))}
                         </ul>
                     )}
+
+                    {/* Show message if no matches found */}
                     {showSearch && currentItem.name && filteredItems.length === 0 && (
                         <p className="no-results">No matching items found.</p>
                     )}
                 </div>
 
+                {/* Form to edit selected item */}
                 {selectedItemId && (
                     <form onSubmit={handleSubmit} className="edit-item-form">
                         <div className="form-group">
@@ -196,6 +220,8 @@ const EditItem = () => {
                                 disabled={loading}
                             />
                         </div>
+
+                        {/* Buttons */}
                         <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? 'Updating...' : 'Update Item'}
                         </button>
@@ -209,6 +235,8 @@ const EditItem = () => {
                         </button>
                     </form>
                 )}
+
+                {/* Loading message */}
                 {loading && <p>Loading...</p>}
             </div>
         </div>
