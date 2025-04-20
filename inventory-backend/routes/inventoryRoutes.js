@@ -1,9 +1,12 @@
+// Inventory routes: Handles inventory-related operations per authenticated user
 const express = require("express");
 const { connectToUserDB } = require("../middleware/dbConnection");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// @route   POST /api/inventory
+// @desc    Add a new inventory item to the user's personal DB
 router.post("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
         if (!req.Inventory) {
@@ -40,6 +43,8 @@ router.post("/", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
+// @route   GET /api/inventory
+// @desc    Fetch all inventory items belonging to the logged-in user
 router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
     try {
         if (!req.Inventory) {
@@ -62,6 +67,8 @@ router.get("/", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
+// @route   GET /api/inventory/:id
+// @desc    Fetch a specific inventory item for the authenticated user
 router.get("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
         if (!req.Inventory) {
@@ -88,7 +95,8 @@ router.get("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
-
+// @route   PUT /api/inventory/:id
+// @desc    Update a specific inventory item for the user
 router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     try {
         if (!req.Inventory) {
@@ -118,7 +126,8 @@ router.put("/:id", authMiddleware, connectToUserDB, async (req, res) => {
     }
 });
 
-// PUT /api/inventory/:id/reduce
+// @route   PUT /api/inventory/:id/reduce
+// @desc    Reduce quantity of a specific item (e.g., after sale/usage)
 router.put("/:id/reduce", authMiddleware, connectToUserDB, async (req, res) => {
     try {
         const { id } = req.params;
@@ -154,6 +163,5 @@ router.put("/:id/reduce", authMiddleware, connectToUserDB, async (req, res) => {
         return res.status(500).json({ message: "Internal server error." });
     }
 });
-
 
 module.exports = router;
