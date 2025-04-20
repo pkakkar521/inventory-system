@@ -113,13 +113,13 @@ const AddItem = () => {
           <button onClick={() => navigate("/inventory")} className="btn btn-secondary extra me-2">
             Back to Inventory
           </button>
-          <button
+          {/* <button
             onClick={handleGenerateRandomItems}
             className="btn btn-warning"
             disabled={loading}
           >
             {loading ? "Generating..." : "Generate 100 Random Items"}
-          </button>
+          </button> */}
         </div>
 
         <form onSubmit={handleAddItem} className="add-stock-form">
